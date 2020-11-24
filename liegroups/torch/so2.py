@@ -23,7 +23,7 @@ class SO2Matrix(_base.SOMatrixBase):
         s = phi.sin()
         c = phi.cos()
 
-        mat = phi.__class__(phi.shape[0], cls.dim, cls.dim)
+        mat = phi.__class__(phi.shape[0], cls.dim, cls.dim).to(phi.device)
         mat[:, 0, 0] = c
         mat[:, 0, 1] = -s
         mat[:, 1, 0] = s
@@ -38,18 +38,19 @@ class SO2Matrix(_base.SOMatrixBase):
 
     @classmethod
     def inv_left_jacobian(cls, phi):
+        device = phi.device
         """(see Barfoot/Eade)."""
         if phi.dim() < 1:
             phi = phi.unsqueeze(dim=0)
 
-        jac = phi.__class__(phi.shape[0], cls.dim, cls.dim)
+        jac = phi.__class__(phi.shape[0], cls.dim, cls.dim).to(device)
 
         # Near phi==0, use first order Taylor expansion
         small_angle_mask = utils.isclose(phi, 0.)
         small_angle_inds = small_angle_mask.nonzero().squeeze_(dim=1)
 
         if len(small_angle_inds) > 0:
-            jac[small_angle_inds] = torch.eye(cls.dim).expand(
+            jac[small_angle_inds] = torch.eye(cls.dim, device=device).expand(
                 len(small_angle_inds), cls.dim, cls.dim) \
                 - 0.5 * cls.wedge(phi[small_angle_inds])
 
@@ -62,15 +63,13 @@ class SO2Matrix(_base.SOMatrixBase):
             ha = 0.5 * angle       # half angle
             hacha = ha / ha.tan()  # half angle * cot(half angle)
 
-            ha.unsqueeze_(dim=1).unsqueeze_(
-                dim=2).expand_as(jac[large_angle_inds])
-            hacha.unsqueeze_(dim=1).unsqueeze_(
-                dim=2).expand_as(jac[large_angle_inds])
+            ha = ha[:, None, None].expand_as(jac[large_angle_inds])
+            hacha = hacha[:, None, None].expand_as(jac[large_angle_inds])
 
             A = hacha * \
-                torch.eye(cls.dim).unsqueeze_(
+                torch.eye(cls.dim, device=device).unsqueeze_(
                     dim=0).expand_as(jac[large_angle_inds])
-            B = -ha * cls.wedge(phi.__class__([1.]))
+            B = -ha * cls.wedge(phi.__class__([1.]).to(device))
 
             jac[large_angle_inds] = A + B
 
@@ -79,17 +78,19 @@ class SO2Matrix(_base.SOMatrixBase):
     @classmethod
     def left_jacobian(cls, phi):
         """(see Barfoot/Eade)."""
+
+        device = phi.device
         if phi.dim() < 1:
             phi = phi.unsqueeze(dim=0)
 
-        jac = phi.__class__(phi.shape[0], cls.dim, cls.dim)
+        jac = phi.__class__(phi.shape[0], cls.dim, cls.dim).to(device)
 
         # Near phi==0, use first order Taylor expansion
         small_angle_mask = utils.isclose(phi, 0.)
         small_angle_inds = small_angle_mask.nonzero().squeeze_(dim=1)
 
         if len(small_angle_inds) > 0:
-            jac[small_angle_inds] = torch.eye(cls.dim).expand(
+            jac[small_angle_inds] = torch.eye(cls.dim, device=device).expand(
                 len(small_angle_inds), cls.dim, cls.dim) \
                 + 0.5 * cls.wedge(phi[small_angle_inds])
 
@@ -104,11 +105,11 @@ class SO2Matrix(_base.SOMatrixBase):
 
             A = (s / angle).unsqueeze_(dim=1).unsqueeze_(
                 dim=2).expand_as(jac[large_angle_inds]) * \
-                torch.eye(cls.dim).unsqueeze_(dim=0).expand_as(
+                torch.eye(cls.dim, device=device).unsqueeze_(dim=0).expand_as(
                 jac[large_angle_inds])
             B = ((1. - c) / angle).unsqueeze_(dim=1).unsqueeze_(
                 dim=2).expand_as(jac[large_angle_inds]) * \
-                cls.wedge(phi.__class__([1.]))
+                cls.wedge(phi.__class__([1.]).to(device))
 
             jac[large_angle_inds] = A + B
 

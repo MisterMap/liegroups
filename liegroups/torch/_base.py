@@ -280,13 +280,15 @@ class SEMatrixBase(_base.SEMatrixBase):
                     "Vector or vector-batch must have shape ({},), ({},), (N,{}), (N,{}), ({},N,{}), or ({},N,{})".format(self.dim - 1, self.dim, self.dim - 1, self.dim, batch_size, self.dim - 1, batch_size, self.dim))
 
     @classmethod
-    def from_matrix(cls, mat, normalize=False):
+    def from_matrix(cls, mat, normalize=False, check=True):
         if mat.dim() < 3:
             mat = mat.unsqueeze(dim=0)
 
-        mat_is_valid = cls.is_valid_matrix(mat)
+        mat_is_valid = None
+        if check:
+            mat_is_valid = cls.is_valid_matrix(mat)
 
-        if mat_is_valid.all() or normalize:
+        if not check or mat_is_valid.all() or normalize:
             rot = mat[:, 0:cls.dim - 1, 0:cls.dim - 1].squeeze()
             trans = mat[:, 0:cls.dim - 1, cls.dim - 1].squeeze()
             result = cls(cls.RotationType(rot), trans)

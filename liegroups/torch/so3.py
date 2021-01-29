@@ -31,7 +31,7 @@ class SO3Matrix(_base.SOMatrixBase):
 
         if len(small_angle_inds) > 0:
             mat[small_angle_inds] = \
-                torch.eye(cls.dim, dtype=phi.dtype).expand_as(mat[small_angle_inds]) + \
+                torch.eye(cls.dim, dtype=phi.dtype, device=phi.device).expand_as(mat[small_angle_inds]) + \
                 cls.wedge(phi[small_angle_inds])
 
         # Otherwise...
@@ -47,7 +47,7 @@ class SO3Matrix(_base.SOMatrixBase):
             c = angle.cos().unsqueeze_(dim=1).unsqueeze_(
                 dim=2).expand_as(mat[large_angle_inds])
 
-            A = c * torch.eye(cls.dim, dtype=phi.dtype).unsqueeze_(dim=0).expand_as(
+            A = c * torch.eye(cls.dim, dtype=phi.dtype, device=phi.device).unsqueeze_(dim=0).expand_as(
                 mat[large_angle_inds])
             B = (1. - c) * utils.outer(axis, axis)
             C = s * cls.wedge(axis)
@@ -177,7 +177,7 @@ class SO3Matrix(_base.SOMatrixBase):
         small_angle_inds = small_angle_mask.nonzero().squeeze_(dim=1)
         if len(small_angle_inds) > 0:
             jac[small_angle_inds] = \
-                torch.eye(cls.dof, dtype=phi.dtype).expand_as(jac[small_angle_inds]) + \
+                torch.eye(cls.dof, dtype=phi.dtype, device=phi.device).expand_as(jac[small_angle_inds]) + \
                 0.5 * cls.wedge(phi[small_angle_inds])
 
         # Otherwise...
@@ -193,7 +193,7 @@ class SO3Matrix(_base.SOMatrixBase):
 
             A = (s / angle).unsqueeze_(dim=1).unsqueeze_(
                 dim=2).expand_as(jac[large_angle_inds]) * \
-                torch.eye(cls.dof, dtype=phi.dtype).unsqueeze_(dim=0).expand_as(
+                torch.eye(cls.dof, dtype=phi.dtype, device=phi.device).unsqueeze_(dim=0).expand_as(
                 jac[large_angle_inds])
             B = (1. - s / angle).unsqueeze_(dim=1).unsqueeze_(
                 dim=2).expand_as(jac[large_angle_inds]) * \
@@ -226,7 +226,7 @@ class SO3Matrix(_base.SOMatrixBase):
         if len(small_angle_inds) > 0:
             phi[small_angle_inds, :] = \
                 self.vee(mat[small_angle_inds] -
-                         torch.eye(self.dim, dtype=mat.dtype).expand_as(mat[small_angle_inds]))
+                         torch.eye(self.dim, dtype=mat.dtype, device=phi.device).expand_as(mat[small_angle_inds]))
 
         # Otherwise...
         large_angle_mask = small_angle_mask.logical_not()

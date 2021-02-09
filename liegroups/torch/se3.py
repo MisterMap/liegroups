@@ -23,7 +23,7 @@ class SE3Matrix(_base.SEMatrixBase):
 
         trans_wedge = self.RotationType.wedge(trans)
         if trans_wedge.dim() < 3:
-            trans_wedge.unsqueeze_(dim=0)  # matrix --> batch
+            trans_wedge.unsqueeze(dim=0)  # matrix --> batch
 
         trans_wedge_bmm_rot = torch.bmm(trans_wedge, rot)
 
@@ -80,11 +80,11 @@ class SE3Matrix(_base.SEMatrixBase):
         rot_jac = cls.RotationType.left_jacobian(phi)
 
         if rot_jac.dim() < 3:
-            rot_jac.unsqueeze_(dim=0)
+            rot_jac = rot_jac.unsqueeze(dim=0)
         if rho.dim() < 3:
-            rho.unsqueeze_(dim=2)
+            rho = rho.unsqueeze(dim=2)
 
-        trans = torch.bmm(rot_jac, rho).squeeze_()
+        trans = torch.bmm(rot_jac, rho).squeeze()
 
         return cls(rot, trans)
 
@@ -102,11 +102,11 @@ class SE3Matrix(_base.SEMatrixBase):
 
         rx = cls.RotationType.wedge(rho)
         if rx.dim() < 3:
-            rx.unsqueeze_(dim=0)
+            rx = rx.unsqueeze(dim=0)
 
         px = cls.RotationType.wedge(phi)
         if px.dim() < 3:
-            px.unsqueeze_(dim=0)
+            px = px.unsqueeze(dim=0)
 
         ph = phi.norm(p=2, dim=1)
         ph2 = ph * ph
@@ -122,9 +122,9 @@ class SE3Matrix(_base.SEMatrixBase):
         m3 = (0.5 * ph2 + cph - 1.) / ph4
         m4 = (ph - 1.5 * sph + 0.5 * ph * cph) / ph5
 
-        m2 = m2.unsqueeze_(dim=1).unsqueeze_(dim=2).expand_as(rx)
-        m3 = m3.unsqueeze_(dim=1).unsqueeze_(dim=2).expand_as(rx)
-        m4 = m4.unsqueeze_(dim=1).unsqueeze_(dim=2).expand_as(rx)
+        m2 = m2.unsqueeze(dim=1).unsqueeze(dim=2).expand_as(rx)
+        m3 = m3.unsqueeze(dim=1).unsqueeze(dim=2).expand_as(rx)
+        m4 = m4.unsqueeze(dim=1).unsqueeze(dim=2).expand_as(rx)
 
         t1 = rx
         t2 = px.bmm(rx) + rx.bmm(px) + px.bmm(rx).bmm(px)
@@ -171,11 +171,11 @@ class SE3Matrix(_base.SEMatrixBase):
             so3_inv_jac = cls.RotationType.inv_left_jacobian(
                 phi[large_angle_inds])
             if so3_inv_jac.dim() < 3:
-                so3_inv_jac.unsqueeze_(dim=0)
+                so3_inv_jac = so3_inv_jac.unsqueeze(dim=0)
 
             Q_mat = cls.left_jacobian_Q_matrix(xi[large_angle_inds])
             if Q_mat.dim() < 3:
-                Q_mat.unsqueeze_(dim=0)
+                Q_mat = Q_mat.unsqueeze(dim=0)
 
             zero_block = phi.new_empty(Q_mat.shape).zero_()
             inv_jac_Q_inv_jac = so3_inv_jac.bmm(Q_mat).bmm(so3_inv_jac)
@@ -184,7 +184,7 @@ class SE3Matrix(_base.SEMatrixBase):
                 [torch.cat([so3_inv_jac, -inv_jac_Q_inv_jac], dim=2),
                  torch.cat([zero_block, so3_inv_jac], dim=2)], dim=1)
 
-        return jac.squeeze_()
+        return jac.squeeze()
 
     @classmethod
     def left_jacobian(cls, xi):
@@ -203,7 +203,7 @@ class SE3Matrix(_base.SEMatrixBase):
 
         # Near phi==0, use first order Taylor expansion
         small_angle_mask = utils.isclose(angle, 0.)
-        small_angle_inds = small_angle_mask.nonzero().squeeze_(dim=1)
+        small_angle_inds = small_angle_mask.nonzero().squeeze(dim=1)
         if len(small_angle_inds) > 0:
             # Create an identity matrix with a tensor type that matches the input
             I = phi.new_empty(cls.dof, cls.dof)
@@ -220,11 +220,11 @@ class SE3Matrix(_base.SEMatrixBase):
         if len(large_angle_inds) > 0:
             so3_jac = cls.RotationType.left_jacobian(phi[large_angle_inds])
             if so3_jac.dim() < 3:
-                so3_jac.unsqueeze_(dim=0)
+                so3_jac = so3_jac.unsqueeze(dim=0)
 
             Q_mat = cls.left_jacobian_Q_matrix(xi[large_angle_inds])
             if Q_mat.dim() < 3:
-                Q_mat.unsqueeze_(dim=0)
+                Q_mat = Q_mat.unsqueeze(dim=0)
 
             zero_block = phi.new_empty(Q_mat.shape).zero_()
 
@@ -244,17 +244,17 @@ class SE3Matrix(_base.SEMatrixBase):
             trans = self.trans
 
         if inv_rot_jac.dim() < 3:
-            inv_rot_jac.unsqueeze_(dim=0)
+            inv_rot_jac = inv_rot_jac.unsqueeze(dim=0)
         if trans.dim() < 3:
             trans = trans.unsqueeze(dim=2)
 
-        rho = torch.bmm(inv_rot_jac, trans).squeeze_()
+        rho = torch.bmm(inv_rot_jac, trans).squeeze()
         if rho.dim() < 2:
-            rho.unsqueeze_(dim=0)
+            rho = rho.unsqueeze(dim=0)
         if phi.dim() < 2:
-            phi.unsqueeze_(dim=0)
+            phi = phi.unsqueeze(dim=0)
 
-        return torch.cat([rho, phi], dim=1).squeeze_()
+        return torch.cat([rho, phi], dim=1).squeeze()
 
     @classmethod
     def odot(cls, p, directional=False):
@@ -268,7 +268,7 @@ class SE3Matrix(_base.SEMatrixBase):
             # Assume scale parameter is 1 unless p is a direction
             # vector, in which case the scale is 0
             if not directional:
-                result[:, :3, :3] = torch.eye(3, dtype=p.dtype).unsqueeze_(dim=0).expand(
+                result[:, :3, :3] = torch.eye(3, dtype=p.dtype).unsqueeze(dim=0).expand(
                     p.shape[0], 3, 3)
 
             result[:, :3, 3:] = cls.RotationType.wedge(-p)
@@ -276,8 +276,8 @@ class SE3Matrix(_base.SEMatrixBase):
         # Got homogeneous coordinates
         elif p.shape[1] == cls.dim:
             result[:, :3, :3] = \
-                p[:, 3].unsqueeze_(dim=1).unsqueeze_(dim=2) * \
-                torch.eye(3, dtype=p.dtype).unsqueeze_(dim=0).repeat(
+                p[:, 3].unsqueeze(dim=1).unsqueeze(dim=2) * \
+                torch.eye(3, dtype=p.dtype).unsqueeze(dim=0).repeat(
                 p.shape[0], 1, 1)
 
             result[:, :3, 3:] = cls.RotationType.wedge(-p[:, :3])

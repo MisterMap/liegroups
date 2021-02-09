@@ -27,7 +27,7 @@ class SO3Matrix(_base.SOMatrixBase):
 
         # Near phi==0, use first order Taylor expansion
         small_angle_mask = utils.isclose(angle, 0.)
-        small_angle_inds = small_angle_mask.nonzero().squeeze_(dim=1)
+        small_angle_inds = small_angle_mask.nonzero().squeeze(dim=1)
 
         if len(small_angle_inds) > 0:
             mat[small_angle_inds] = \
@@ -36,25 +36,25 @@ class SO3Matrix(_base.SOMatrixBase):
 
         # Otherwise...
         large_angle_mask = small_angle_mask.logical_not()
-        large_angle_inds = large_angle_mask.nonzero().squeeze_(dim=1)
+        large_angle_inds = large_angle_mask.nonzero().squeeze(dim=1)
 
         if len(large_angle_inds) > 0:
             angle = angle[large_angle_inds]
             axis = phi[large_angle_inds] / \
                 angle.unsqueeze(dim=1).expand(len(angle), cls.dim)
-            s = angle.sin().unsqueeze_(dim=1).unsqueeze_(
+            s = angle.sin().unsqueeze(dim=1).unsqueeze(
                 dim=2).expand_as(mat[large_angle_inds])
-            c = angle.cos().unsqueeze_(dim=1).unsqueeze_(
+            c = angle.cos().unsqueeze(dim=1).unsqueeze(
                 dim=2).expand_as(mat[large_angle_inds])
 
-            A = c * torch.eye(cls.dim, dtype=phi.dtype, device=phi.device).unsqueeze_(dim=0).expand_as(
+            A = c * torch.eye(cls.dim, dtype=phi.dtype, device=phi.device).unsqueeze(dim=0).expand_as(
                 mat[large_angle_inds])
             B = (1. - c) * utils.outer(axis, axis)
             C = s * cls.wedge(axis)
 
             mat[large_angle_inds] = A + B + C
 
-        return cls(mat.squeeze_())
+        return cls(mat.squeeze())
 
     @classmethod
     def from_quaternion(cls, quat, ordering='wxyz'):
@@ -151,7 +151,7 @@ class SO3Matrix(_base.SOMatrixBase):
             hacha = hacha[:, None, None].expand_as(jac[large_angle_inds])
 
             A = hacha * \
-                torch.eye(cls.dof, dtype=phi.dtype, device=phi.device).unsqueeze_(
+                torch.eye(cls.dof, dtype=phi.dtype, device=phi.device).unsqueeze(
                     dim=0).expand_as(jac[large_angle_inds])
             B = (1. - hacha) * utils.outer(axis, axis)
             C = -ha * cls.wedge(axis)
@@ -174,7 +174,7 @@ class SO3Matrix(_base.SOMatrixBase):
 
         # Near phi==0, use first order Taylor expansion
         small_angle_mask = utils.isclose(angle, 0.)
-        small_angle_inds = small_angle_mask.nonzero().squeeze_(dim=1)
+        small_angle_inds = small_angle_mask.nonzero().squeeze(dim=1)
         if len(small_angle_inds) > 0:
             jac[small_angle_inds] = \
                 torch.eye(cls.dof, dtype=phi.dtype, device=phi.device).expand_as(jac[small_angle_inds]) + \
@@ -182,7 +182,7 @@ class SO3Matrix(_base.SOMatrixBase):
 
         # Otherwise...
         large_angle_mask = small_angle_mask.logical_not()
-        large_angle_inds = large_angle_mask.nonzero().squeeze_(dim=1)
+        large_angle_inds = large_angle_mask.nonzero().squeeze(dim=1)
 
         if len(large_angle_inds) > 0:
             angle = angle[large_angle_inds]
@@ -191,20 +191,20 @@ class SO3Matrix(_base.SOMatrixBase):
             s = angle.sin()
             c = angle.cos()
 
-            A = (s / angle).unsqueeze_(dim=1).unsqueeze_(
+            A = (s / angle).unsqueeze(dim=1).unsqueeze(
                 dim=2).expand_as(jac[large_angle_inds]) * \
-                torch.eye(cls.dof, dtype=phi.dtype, device=phi.device).unsqueeze_(dim=0).expand_as(
+                torch.eye(cls.dof, dtype=phi.dtype, device=phi.device).unsqueeze(dim=0).expand_as(
                 jac[large_angle_inds])
-            B = (1. - s / angle).unsqueeze_(dim=1).unsqueeze_(
+            B = (1. - s / angle).unsqueeze(dim=1).unsqueeze(
                 dim=2).expand_as(jac[large_angle_inds]) * \
                 utils.outer(axis, axis)
-            C = ((1. - c) / angle).unsqueeze_(dim=1).unsqueeze_(
+            C = ((1. - c) / angle).unsqueeze(dim=1).unsqueeze(
                 dim=2).expand_as(jac[large_angle_inds]) * \
                 cls.wedge(axis.squeeze())
 
             jac[large_angle_inds] = A + B + C
 
-        return jac.squeeze_()
+        return jac.squeeze()
 
     def log(self):
         if self.mat.dim() < 3:
@@ -237,7 +237,7 @@ class SO3Matrix(_base.SOMatrixBase):
             sin_angle = angle.sin()
             phi[large_angle_inds, :] = \
                 self.vee(
-                    (0.5 * angle / sin_angle).unsqueeze_(dim=1).unsqueeze_(dim=1).expand_as(mat[large_angle_inds]) *
+                    (0.5 * angle / sin_angle).unsqueeze(dim=1).unsqueeze(dim=1).expand_as(mat[large_angle_inds]) *
                     (mat[large_angle_inds] - mat[large_angle_inds].transpose(2, 1)))
 
         return phi.squeeze_()
@@ -358,15 +358,15 @@ class SO3Matrix(_base.SOMatrixBase):
 
         # Check ordering last
         if ordering is 'xyzw':
-            quat = torch.cat([qx.unsqueeze_(dim=1),
-                              qy.unsqueeze_(dim=1),
-                              qz.unsqueeze_(dim=1),
-                              qw.unsqueeze_(dim=1)], dim=1).squeeze_()
+            quat = torch.cat([qx.unsqueeze(dim=1),
+                              qy.unsqueeze(dim=1),
+                              qz.unsqueeze(dim=1),
+                              qw.unsqueeze(dim=1)], dim=1).squeeze_()
         elif ordering is 'wxyz':
-            quat = torch.cat([qw.unsqueeze_(dim=1),
-                              qx.unsqueeze_(dim=1),
-                              qy.unsqueeze_(dim=1),
-                              qz.unsqueeze_(dim=1)], dim=1).squeeze_()
+            quat = torch.cat([qw.unsqueeze(dim=1),
+                              qx.unsqueeze(dim=1),
+                              qy.unsqueeze(dim=1),
+                              qz.unsqueeze(dim=1)], dim=1).squeeze_()
         else:
             raise ValueError(
                 "Valid orderings are 'xyzw' and 'wxyz'. Got '{}'.".format(ordering))
@@ -414,9 +414,9 @@ class SO3Matrix(_base.SOMatrixBase):
             roll = torch.atan2(remainder_mats[:, 2, 1] * sec_pitch,
                                remainder_mats[:, 2, 2] * sec_pitch)
 
-        return torch.cat([roll.unsqueeze_(dim=1),
-                          pitch.unsqueeze_(dim=1),
-                          yaw.unsqueeze_(dim=1)], dim=1).squeeze_()
+        return torch.cat([roll.unsqueeze(dim=1),
+                          pitch.unsqueeze(dim=1),
+                          yaw.unsqueeze(dim=1)], dim=1).squeeze_()
 
     @classmethod
     def vee(cls, Phi):
